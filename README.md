@@ -2,6 +2,9 @@ An effort to make the [cnn-lite](https://github.com/cn-uofbasel/ccn-lite) distri
 
 
 
+License
+==============
+
 Copyright (c) 2012-2013, Christian Tschudin, University of Basel
 
 Permission to use, copy, modify, and/or distribute this software for any
