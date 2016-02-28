@@ -25,6 +25,7 @@
 #define CCNL_CORE
 
 #include <hiredis.h>
+ 
 
 #define EXACT_MATCH 1
 #define PREFIX_MATCH 0

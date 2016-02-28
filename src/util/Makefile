@@ -1,8 +1,14 @@
 # ccnl/util/Makefile
 
+#REDIS
+REDISLIB = /home/todd/hiredis/
+CREDISFLAGS = -I$(REDISLIB)
+
+#----------------------------------------
+
 CC?=gcc
-CFLAGS=-Wall -g -DUSE_UTIL -Wno-error=deprecated-declarations -std=c99 -Werror
-EXTLIBS=-lcrypto
+CFLAGS=-Wall -g -DUSE_UTIL -Wno-error=deprecated-declarations -std=c99 -Werror ${CREDISFLAGS}
+EXTLIBS=-lcrypto -lhiredis
 CREATE_BIN=mkdir -p ../../bin && cd ../../bin && ln -f -s ../src/util/$@ $@
 
 

@@ -944,7 +944,7 @@ ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
                      "for suite %s does not exist.\n", ccnl_suite2str(suite));
             return;
         }
-        if (dispatch(relay, from, &data, &datalen) < 0)
+        if (dispatch(relay, from, &data, &datalen) < 0) // NOTE HERE IS WHERE PACKET IS FORWARDED
             break;
         if (datalen > 0) {
             DEBUGMSG_CORE(WARNING, "ccnl_core_RX: %d bytes left\n", datalen);

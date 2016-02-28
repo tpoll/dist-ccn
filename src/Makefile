@@ -14,12 +14,18 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 CC?=gcc
 
+#REDIS
+REDISLIB = /home/todd/hiredis/
+CREDISFLAGS = -I$(REDISLIB)
+
+#----------------------------------------
+
 # Get version of gcc with two digits, e.g. 40902
 GCC_VERSION := $(shell ${CC} -dumpversion | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
 GCC_GTEQ_40900 := $(shell expr ${GCC_VERSION} \>= 40900)
 
 # general flags used on both linux and OSX
-CCNLCFLAGS=-Wall -Werror -std=c99 -g
+CCNLCFLAGS=-Wall -Werror -std=c99 -g ${CREDISFLAGS}
 	
 ifeq ($(RIOTBASE),)
 	CCNLCFLAGS += -pedantic -O0
@@ -35,7 +41,7 @@ endif
 OSX_CFLAGS=-Wno-error=deprecated-declarations
 
 CREATE_BIN=mkdir -p ../bin && cd ../bin && ln -f -s ../src/$@ $@
-EXTLIBS=  -lcrypto
+EXTLIBS=  -lcrypto -lhiredis
 EXTMAKE=
 EXTMAKECLEAN=
 
@@ -91,7 +97,7 @@ ifdef USE_CHEMFLOW
     EXTLIBS=-lcf -lcfserver -lcrypto
     EXTMAKE=cd ${CHEMFLOW_HOME}; make
     EXTMAKECLEAN=cd ${CHEMFLOW_HOME}; make clean
-    CCNLCFLAGS+=-DUSE_CHEMFLOW -I${CHEMFLOW_HOME}/include -L${CHEMFLOW_HOME}/staging/host/lib
+    CCNLCFLAGS+=-DUSE_CHEMFLOW -I${CHEMFLOW_HOME}/include -L${CHEMFLOW_HOME}/staging/host/lib 
 endif
 
 EXTRA_CFLAGS := -g $(OPTCFLAGS) -std=gnu99
@@ -135,18 +141,7 @@ OMNET_DEPS = ccnl-core.c ccnl-core-fwd.c ccnl-core.h ccnl-core-util.c ccnl-defs.
              util/base64.c util/ccnl-common.c \
 
 # ----------------------------------------------------------------------
-#REDIS
-REDISLIB = /home/todd/hiredis/
-REDISAR = /usr/local/lib/libhiredis.a
-CREDISFLAGS = -I$(REDISLIB)
 
-LDFLAGS = 
-INCLUDES = $(REDISLIB)hiredis.h 
-
-
-
-
-#----------------------------------------
 
 all: ${PROGS}
 	+make -C util
@@ -166,7 +161,7 @@ $(UTIL_LIB): %.o: %.c
 
 ccn-lite-minimalrelay: ccn-lite-minimalrelay.c \
 	${SUITE_LIBS} ${CCNL_CORE_LIB}
-	${CC} -o $@ ${CCNLCFLAGS} $<
+	${CC} -o $@ ${CCNLCFLAGS} $< ${EXTLIBS}
 	@${CREATE_BIN}
 
 ccn-nfn-relay: ${CCNL_RELAY_LIB}
@@ -178,7 +173,7 @@ ccn-nfn-relay-nack: ${CCNL_RELAY_LIB}
 	@${CREATE_BIN}
 
 ccn-lite-relay: ${CCNL_RELAY_LIB}
-	${CC} -o $@ ${CCNLCFLAGS} $(CREDISFLAGS) $< ${EXTLIBS} $(REDISAR) 
+	${CC} -o $@ ${CCNLCFLAGS} $< ${EXTLIBS} 
 	@${CREATE_BIN}
 
 ccn-lite-relay-nack: ${CCNL_RELAY_LIB}

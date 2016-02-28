@@ -172,6 +172,10 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     // Step 1: search in content store
     DEBUGMSG_CFWD(DEBUG, "  searching in CS\n");
 
+    redisReply *reply = redisCommand(relay->redis_content,"PING");
+    printf("PING: %s\n", reply->str);
+    freeReplyObject(reply);
+
     for (c = relay->contents; c; c = c->next) {
         if (c->pkt->pfx->suite != (*pkt)->pfx->suite)
             continue;
