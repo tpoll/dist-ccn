@@ -759,6 +759,23 @@ notacontent:
     closedir(dir);
 }
 
+
+void initialize_redis_context(struct ccnl_relay_s *theRelay)
+{
+    struct timeval timeout = { 1, 500000 }; // 1.5 seconds
+    theRelay->redis_content = redisConnectWithTimeout("127.0.0.1",  6379, timeout); // hardcode for local testing
+    
+    if (theRelay->redis_content == NULL || theRelay->redis_content->err) {
+        if (theRelay->redis_content) {
+            printf("Connection error: %s\n", theRelay->redis_content->errstr);
+            redisFree(theRelay->redis_content);
+        } else {
+            printf("Connection error: can't allocate redis context\n");
+        }
+        exit(1);
+    }
+}
+
 // ----------------------------------------------------------------------
 
 int
@@ -891,6 +908,7 @@ usage:
     }
 #endif
 
+    initialize_redis_context(&theRelay);
     ccnl_io_loop(&theRelay);
 
     while (eventqueue)

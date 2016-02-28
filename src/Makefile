@@ -178,7 +178,7 @@ ccn-nfn-relay-nack: ${CCNL_RELAY_LIB}
 	@${CREATE_BIN}
 
 ccn-lite-relay: ${CCNL_RELAY_LIB}
-	${CC} -o $@ ${CCNLCFLAGS} $< ${EXTLIBS}
+	${CC} -o $@ ${CCNLCFLAGS} $(CREDISFLAGS) $< ${EXTLIBS} $(REDISAR) 
 	@${CREATE_BIN}
 
 ccn-lite-relay-nack: ${CCNL_RELAY_LIB}

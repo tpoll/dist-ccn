@@ -48,8 +48,6 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-
-
     /* Set a key using binary safe API */
     reply = redisCommand(c,"SET %b %b", content_name, strlen(content_name), buff, size);
     printf("SET (binary API): %s\n", reply->str);

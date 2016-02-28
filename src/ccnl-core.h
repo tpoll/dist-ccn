@@ -24,6 +24,8 @@
 #ifndef CCNL_CORE
 #define CCNL_CORE
 
+#include <hiredis.h>
+
 #define EXACT_MATCH 1
 #define PREFIX_MATCH 0
 
@@ -112,6 +114,7 @@ struct ccnl_relay_s {
     struct ccnl_forward_s *fib;
     struct ccnl_interest_s *pit;
     struct ccnl_content_s *contents; //, *contentsend;
+    redisContext *redis_content; // shared content sotre
     struct ccnl_buf_s *nonces;
     int contentcnt;             // number of cached items
     int max_cache_entries;      // -1: unlimited
