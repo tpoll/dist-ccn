@@ -897,7 +897,7 @@ ccnl_nonce_isDup(struct ccnl_relay_s *relay, struct ccnl_pkt_s *pkt)
 struct ccnl_suite_s ccnl_core_suites[CCNL_SUITE_LAST];
 
 void
-ccnl_core_RX(struct ccnl_relay_s *relay, int `, unsigned char *data,
+ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
              int datalen, struct sockaddr *sa, int addrlen)
 {
     unsigned char *base = data;
