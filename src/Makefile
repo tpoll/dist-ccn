@@ -146,8 +146,8 @@ OMNET_DEPS = ccnl-core.c ccnl-core-fwd.c ccnl-core.h ccnl-core-util.c ccnl-defs.
 all: ${PROGS}
 	+make -C util
 
-redis-utils: redis-utils.c $(REDISAR) $(INCLUDES)
-	gcc -o redis-utils  $(CREDISFLAGS) redis-utils.c $(REDISAR)
+redis-utils: redis-utils.c
+	${CC} -o $@ ${CCNLCFLAGS} $< ${EXTLIBS}
 
 lib-ccn-lite.a: ccn-lite-riot.c \
 	${SUITE_LIBS} ${CCNL_CORE_LIB} ${CCNL_PLATFORM_LIB}
@@ -222,5 +222,4 @@ clean:
 	rm -rf .ccn-lite-lnxkernel* *.ko *.mod.c *.mod.o .tmp_versions modules.order Module.symvers
 	rm -rf ccn-lite-omnet.tgz
 	rm -rf ../bin
-	rm redis-utils
 	+make -C util clean

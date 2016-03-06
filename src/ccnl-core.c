@@ -35,6 +35,7 @@ int ccnl_prefix_cmp(struct ccnl_prefix_s *name, unsigned char *md,
 int ccnl_i_prefixof_c(struct ccnl_prefix_s *prefix, int minsuffix,
                       int maxsuffix, struct ccnl_content_s *c);
 
+
 // ----------------------------------------------------------------------
 // datastructure support functions
 
@@ -662,6 +663,9 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c) /* T
     ccnl->contentcnt++;
     return c;
 }
+
+
+
 
 // deliver new content c to all clients with (loosely) matching interest,
 // but only one copy per face

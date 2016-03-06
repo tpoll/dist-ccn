@@ -7,12 +7,12 @@
 size_t getFileSize(FILE *file) ;
 
 int main(int argc, char **argv) {
-    unsigned int j;
     redisContext *c;
     redisReply *reply;
-    const char *hostname = (argc > 2) ? argv[2] : "127.0.0.1"; // defaulted to home
-    int port = (argc > 3) ? atoi(argv[3]) : 6379;
-    char *content_name = argv[1];
+    const char *hostname = (argc > 3) ? argv[3] : "127.0.0.1"; // defaulted to home
+    int port = (argc > 4) ? atoi(argv[4]) : 6379;
+    char *path = argv[1];
+    char *content_name = argv[2];
 
     struct timeval timeout = { 1, 500000 }; // 1.5 seconds
     c = redisConnectWithTimeout(hostname, port, timeout);
@@ -31,9 +31,9 @@ int main(int argc, char **argv) {
     printf("PING: %s\n", reply->str);
     freeReplyObject(reply);
 
-    FILE *file = fopen(content_name, "rb");
+    FILE *file = fopen(path, "rb");
     if (file == NULL) {
-        fprintf(stderr, "Error opening file %s\n", content_name);
+        fprintf(stderr, "Error opening file %s\n", path);
         exit(1);
     }
 

@@ -19,6 +19,7 @@
  * File history:
  * 2014-11-05 collected from the various fwd-XXX.c files
  */
+struct ccnl_content_s *ccnl_b2c(struct ccnl_relay_s *ccnl, char *content, size_t size);
 
 // returning 0 if packet was
 int
@@ -171,17 +172,14 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 #endif
     // Step 1: search in content store
     DEBUGMSG_CFWD(DEBUG, "  searching in CS\n");
+    char *content_n = ccnl_prefix_to_path((*pkt)->pfx);
+    printf("the content name is %s\n", content_n);
 
-    redisReply *reply = redisCommand(relay->redis_content,"PING");
+    redisReply *reply = redisCommand(relay->redis_content,"GET %b", content_n, strlen(content_n));
     printf("PING: %s\n", reply->str);
-    freeReplyObject(reply);
-
-    for (c = relay->contents; c; c = c->next) {
-        if (c->pkt->pfx->suite != (*pkt)->pfx->suite)
-            continue;
-        if (cMatch(*pkt, c))
-            continue;
-
+    if (reply->str) {
+        c = ccnl_b2c(relay, reply->str, reply->len);
+        (void)c;
         DEBUGMSG_CFWD(DEBUG, "  found matching content %p\n", (void *) c);
         if (from->ifndx >= 0) {
             ccnl_nfn_monitor(relay, from, c->pkt->pfx, c->pkt->content,
@@ -190,6 +188,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         } else {
             ccnl_app_RX(relay, c);
         }
+        freeReplyObject(reply);
         return 0; // we are done
     }
 
@@ -281,6 +280,131 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
     */
     return 0;
+}
+
+struct ccnl_content_s *ccnl_b2c(struct ccnl_relay_s *ccnl, char *content, size_t size)
+{
+    
+    struct ccnl_buf_s *buf = 0; // , *nonce=0, *ppkd=0, *pkt = 0;
+    struct ccnl_content_s *c = 0;
+    int datalen = size, suite, skip;
+    unsigned char *data;
+    (void) data; // silence compiler warning (if any USE_SUITE_* is not set)
+#if defined(USE_SUITE_IOTTLV) || defined(USE_SUITE_NDNTLV)
+    unsigned int typ;
+    int len;
+#endif
+    struct ccnl_pkt_s *pk;
+
+    buf = (struct ccnl_buf_s *) ccnl_malloc(sizeof(*buf) + size);
+    if (!buf) {
+        return NULL;
+    }
+        
+    memcpy(buf->data, content, size);
+    buf->datalen = datalen;
+    suite = ccnl_pkt2suite(buf->data, datalen, &skip);
+
+    pk = NULL;
+    switch (suite) {
+#ifdef USE_SUITE_CCNB
+    case CCNL_SUITE_CCNB: {
+        unsigned char *start;
+
+        data = start = buf->data + skip;
+        datalen -= skip;
+
+        if (data[0] != 0x04 || data[1] != 0x82)
+            goto notacontent;
+        data += 2;
+        datalen -= 2;
+
+        pk = ccnl_ccnb_bytes2pkt(start, &data, &datalen);
+        break;
+    }
+#endif
+#ifdef USE_SUITE_CCNTLV
+    case CCNL_SUITE_CCNTLV: {
+        int hdrlen;
+        unsigned char *start;
+
+        data = start = buf->data + skip;
+        datalen -=  skip;
+
+        hdrlen = ccnl_ccntlv_getHdrLen(data, datalen);
+        data += hdrlen;
+        datalen -= hdrlen;
+
+        pk = ccnl_ccntlv_bytes2pkt(start, &data, &datalen);
+        break;
+    }
+#endif
+#ifdef USE_SUITE_CISTLV
+    case CCNL_SUITE_CISTLV: {
+        int hdrlen;
+        unsigned char *start;
+
+        data = start = buf->data + skip;
+        datalen -=  skip;
+
+        hdrlen = ccnl_cistlv_getHdrLen(data, datalen);
+        data += hdrlen;
+        datalen -= hdrlen;
+
+        pk = ccnl_cistlv_bytes2pkt(start, &data, &datalen);
+        break;
+    }
+#endif
+#ifdef USE_SUITE_IOTTLV
+    case CCNL_SUITE_IOTTLV: {
+        unsigned char *olddata;
+
+        data = olddata = buf->data + skip;
+        datalen -= skip;
+        if (ccnl_iottlv_dehead(&data, &datalen, &typ, &len) ||
+                                                   typ != IOT_TLV_Reply)
+            goto notacontent;
+        pk = ccnl_iottlv_bytes2pkt(typ, olddata, &data, &datalen);
+        break;
+    }
+#endif
+#ifdef USE_SUITE_NDNTLV
+    case CCNL_SUITE_NDNTLV: {
+        unsigned char *olddata;
+
+        data = olddata = buf->data + skip;
+        datalen -= skip;
+        if (ccnl_ndntlv_dehead(&data, &datalen, (int*) &typ, &len) ||
+                                                     typ != NDN_TLV_Data)
+            goto notacontent;
+        pk = ccnl_ndntlv_bytes2pkt(typ, olddata, &data, &datalen);
+        break;
+    }
+#endif
+    default:
+        DEBUGMSG(WARNING, "unknown packet format n");
+        goto Done;
+    }
+    if (!pk) {
+        DEBUGMSG(DEBUG, "  parsing error in packet");
+        goto Done;
+    }
+    c = ccnl_content_new(ccnl, &pk);
+    if (!c) {
+        DEBUGMSG(WARNING, "could not create content");
+        goto Done;
+    }
+    c->flags |= CCNL_CONTENT_FLAGS_STATIC;
+Done:
+    free_packet(pk);
+    ccnl_free(buf);
+    return c;
+#if defined(USE_SUITE_CCNB) || defined(USE_SUITE_IOTTLV) || defined(USE_SUITE_NDNTLV)
+notacontent:
+    DEBUGMSG(WARNING, "not a content object");
+    ccnl_free(buf);
+#endif
+    return NULL;
 }
 
 // ----------------------------------------------------------------------

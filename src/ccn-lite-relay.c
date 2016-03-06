@@ -760,7 +760,6 @@ notacontent:
     closedir(dir);
 }
 
-
 void initialize_redis_context(struct ccnl_relay_s *theRelay)
 {
     struct timeval timeout = { 1, 500000 }; // 1.5 seconds
@@ -915,6 +914,7 @@ usage:
     while (eventqueue)
         ccnl_rem_timer(eventqueue);
 
+    redisFree(theRelay.redis_content);
     ccnl_core_cleanup(&theRelay);
 #ifdef USE_HTTP_STATUS
     theRelay.http = ccnl_http_cleanup(theRelay.http);
