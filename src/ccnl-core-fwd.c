@@ -182,6 +182,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         (void)c;
         DEBUGMSG_CFWD(DEBUG, "  found matching content %p\n", (void *) c);
         if (from->ifndx >= 0) {
+            printf("ifndx is %d \n", from->ifndx);
             ccnl_nfn_monitor(relay, from, c->pkt->pfx, c->pkt->content,
                              c->pkt->contlen);
             ccnl_face_enqueue(relay, from, buf_dup(c->pkt->buf));

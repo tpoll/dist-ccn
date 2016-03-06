@@ -200,6 +200,18 @@ struct ccnl_face_s {
     struct ccnl_sched_s *sched;
 };
 
+//Face info to store in redis
+struct __attribute__((__packed__)) ccnl_face_shared {
+    int faceid;
+    int ifndx;
+    sockunion peer;
+    int flags;
+    int last_used; // updated when we receive a packet
+    struct ccnl_buf_s *outq, *outqend; // queue of packets to send
+    struct ccnl_frag_s *frag;  // which special datagram armoring
+    struct ccnl_sched_s *sched;
+};
+
 typedef void (*tapCallback)(struct ccnl_relay_s *, struct ccnl_face_s *,
                             struct ccnl_prefix_s *, struct ccnl_buf_s *);
 
