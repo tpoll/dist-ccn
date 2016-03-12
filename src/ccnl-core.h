@@ -122,6 +122,7 @@ struct ccnl_relay_s {
     struct ccnl_if_s ifs[CCNL_MAX_INTERFACES];
     int ifcount;                // number of active interfaces
     char halt_flag;
+    char interest_add[40]; // sha1sum of redis function
     struct ccnl_sched_s* (*defaultFaceScheduler)(struct ccnl_relay_s*,
                                                  void(*cts_done)(void*,void*));
     struct ccnl_sched_s* (*defaultInterfaceScheduler)(struct ccnl_relay_s*,

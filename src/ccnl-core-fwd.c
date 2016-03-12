@@ -176,7 +176,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     printf("the content name is %s\n", content_n);
 
     redisReply *reply = redisCommand(relay->redis_content,"GET %b", content_n, strlen(content_n));
-    printf("PING: %s\n", reply->str);
+    printf("Redis got: %s\n", reply->str);
     if (reply->str) {
         c = ccnl_b2c(relay, reply->str, reply->len);
         (void)c;
@@ -193,29 +193,10 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0; // we are done
     }
 
-    // CONFORM: Step 2: check whether interest is already known
-#ifdef USE_KITE
-    if ((*pkt)->tracing) { // is a tracing interest
-        for (i = relay->pit; i; i = i->next) {
-        }
-    }
-#endif
-    for (i = relay->pit; i; i = i->next)
-        if (ccnl_interest_isSame(i, *pkt))
-            break;
-
-    if (!i) { // this is a new/unknown I request: create and propagate
-#ifdef USE_NFN
-        if (ccnl_nfn_RX_request(relay, from, pkt))
-            return -1; // this means: everything is ok and pkt was consumed
-#endif
-    }
-    if (!ccnl_pkt_fwdOK(*pkt))
-        return -1;
+    printf("about to make interest\n");
+    i = ccnl_interest_new(relay, from, pkt);
     if (!i) {
-        i = ccnl_interest_new(relay, from, pkt);
-
-    char *s = NULL;
+    s = NULL;
 #ifdef USE_NFN
         DEBUGMSG_CFWD(DEBUG,
                       "  created new interest entry %p (prefix=%s, nfnflags=%d)\n",
@@ -230,8 +211,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     ccnl_free(s);
     }
     if (i) { // store the I request, for the incoming face (Step 3)
-        DEBUGMSG_CFWD(DEBUG, "  appending interest entry %p\n", (void *) i);
-        ccnl_interest_append_pending(i, from);
+        printf("Sending int\n");
         ccnl_interest_propagate(relay, i);
     }
 

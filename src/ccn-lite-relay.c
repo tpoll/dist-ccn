@@ -760,9 +760,54 @@ notacontent:
     closedir(dir);
 }
 
+
+
+
+
+
+size_t get_file_size(FILE *fp) 
+{
+    size_t size;
+    fseek(fp, 0L, SEEK_END);
+    size =  ftell(fp);
+    rewind(fp);
+    return size;
+}
+
+
+void register_redis_script(struct ccnl_relay_s *theRelay, char *script)
+{
+    char file_name[2048];
+    size_t size = 0;
+    FILE *fp;
+
+    strcpy(file_name, getenv("CCNL_HOME"));
+    strcat(file_name, "/src/redis_scripts/");
+    strcat(file_name, script);
+
+    fp = fopen(file_name, "rb");
+    if (fp == NULL) {fprintf(stderr, "couldn't open script %s\n", file_name); exit(1);}
+    size = get_file_size(fp);
+
+    char buff[size];
+
+    int n = fread(buff, size, 1, fp);
+    if (n <= 0) {fprintf(stderr, "file read failed\n"); exit(1);}
+
+    
+    redisReply *reply = redisCommand(theRelay->redis_content,"SCRIPT LOAD %b", buff, size);
+    if(!theRelay->redis_content->err) {
+        memcpy(theRelay->interest_add, reply->str, 40);
+    }
+
+    free(reply);
+    printf("%s\n", theRelay->interest_add);
+}
+
 void initialize_redis_context(struct ccnl_relay_s *theRelay)
 {
     struct timeval timeout = { 1, 500000 }; // 1.5 seconds
+
     theRelay->redis_content = redisConnectWithTimeout("127.0.0.1",  6379, timeout); // hardcode for local testing
     
     if (theRelay->redis_content == NULL || theRelay->redis_content->err) {
@@ -772,9 +817,18 @@ void initialize_redis_context(struct ccnl_relay_s *theRelay)
         } else {
             printf("Connection error: can't allocate redis context\n");
         }
+
         exit(1);
     }
+    
+
+    register_redis_script(theRelay, "interest_add.lua");
+
+
+
+
 }
+
 
 // ----------------------------------------------------------------------
 
