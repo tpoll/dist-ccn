@@ -140,8 +140,8 @@ ccnl_pkt_fwdOK(struct ccnl_pkt_s *pkt)
 void serialize_ip4(sockunion *dest, char* buff)
 {
     (void)buff;
-    memcpy(buff, &dest->ip4.sin_family, sizeof(dest->ip4.sin_family));
-    memcpy(&buff[2], &dest->ip4.sin_port, sizeof(dest->ip4.sin_port));
+    memcpy(buff, &dest->ip4.sin_family, 2);
+    memcpy(&buff[2], &dest->ip4.sin_port, 2);
     memcpy(&buff[4], &dest->ip4.sin_addr.s_addr, 4);
 
     // memcpy(&addr.sin_port, &buff[2], sizeof(dest->ip4.sin_port));
@@ -213,10 +213,19 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     char buff[8];
     serialize_ip4(&from->peer, buff);
-    printf("about to make interest\n");
-    i = ccnl_interest_new(relay, from, pkt);
-    if (!i) {
-        s = NULL;
+    reply = redisCommand(relay->redis_content,"EVALSHA %b %d %b%b %b", 
+    relay->interest_add, sizeof(relay->interest_add), 1, "i-", 2, content_n, strlen(content_n), buff, 8);
+    printf("Redis got: %lld\n", reply->integer);
+
+    if (relay->redis_content->err) {
+        fprintf(stderr, "NOT creating interest, issue with redis\n");
+        return 0;
+    }
+
+    if (reply->integer == 0) { // Only send if first node seeing the interest
+        i = ccnl_interest_new(relay, from, pkt);
+        if (!i) {
+            s = NULL;
 #ifdef USE_NFN
         DEBUGMSG_CFWD(DEBUG,
                       "  created new interest entry %p (prefix=%s, nfnflags=%d)\n",
@@ -228,12 +237,13 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                       "  created new interest entry %p (prefix=%s)\n",
                       (void *) i, (s = ccnl_prefix_to_path(i->pkt->pfx)));
 #endif
-    ccnl_free(s);
-    }
-    if (i) { // store the I request, for the incoming face (Step 3)
-        printf("Sending int\n");
-        ccnl_interest_propagate(relay, i);
-    }
+        ccnl_free(s);
+        }
+        if (i) { // Send out the interest
+            printf("Sending int\n");
+            ccnl_interest_propagate(relay, i);
+        }
+}
 
     /*
     if (!i) { // this is a new/unknown I request: create and propagate
