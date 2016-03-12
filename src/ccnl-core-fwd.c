@@ -136,6 +136,23 @@ ccnl_pkt_fwdOK(struct ccnl_pkt_s *pkt)
     return -1;
 }
 
+
+void serialize_ip4(sockunion *dest, char* buff)
+{
+    (void)buff;
+    memcpy(buff, &dest->ip4.sin_family, sizeof(dest->ip4.sin_family));
+    memcpy(&buff[2], &dest->ip4.sin_port, sizeof(dest->ip4.sin_port));
+    memcpy(&buff[4], &dest->ip4.sin_addr.s_addr, 4);
+
+    // memcpy(&addr.sin_port, &buff[2], sizeof(dest->ip4.sin_port));
+
+    // printf("port is %d\n", ntohs(addr.sin_port));
+
+    // printf(" potential udp sendto %s/%d\n",
+    //              inet_ntoa(buff), ntohs(dest->ip4.sin_port));
+
+}
+
 int
 ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                         struct ccnl_pkt_s **pkt, cMatchFct cMatch)
@@ -193,10 +210,13 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0; // we are done
     }
 
+
+    char buff[8];
+    serialize_ip4(&from->peer, buff);
     printf("about to make interest\n");
     i = ccnl_interest_new(relay, from, pkt);
     if (!i) {
-    s = NULL;
+        s = NULL;
 #ifdef USE_NFN
         DEBUGMSG_CFWD(DEBUG,
                       "  created new interest entry %p (prefix=%s, nfnflags=%d)\n",

@@ -794,14 +794,13 @@ void register_redis_script(struct ccnl_relay_s *theRelay, char *script)
     int n = fread(buff, size, 1, fp);
     if (n <= 0) {fprintf(stderr, "file read failed\n"); exit(1);}
 
-    
-    redisReply *reply = redisCommand(theRelay->redis_content,"SCRIPT LOAD %b", buff, size);
+    // Load script into redis memory
+    redisReply *reply = redisCommand(theRelay->redis_content,"SCRIPT LOAD %b", buff, size); 
     if(!theRelay->redis_content->err) {
-        memcpy(theRelay->interest_add, reply->str, 40);
+        memcpy(theRelay->interest_add, reply->str, 40); // add sha1 of script to the relay
     }
 
     free(reply);
-    printf("%s\n", theRelay->interest_add);
 }
 
 void initialize_redis_context(struct ccnl_relay_s *theRelay)
@@ -820,13 +819,8 @@ void initialize_redis_context(struct ccnl_relay_s *theRelay)
 
         exit(1);
     }
-    
 
     register_redis_script(theRelay, "interest_add.lua");
-
-
-
-
 }
 
 
