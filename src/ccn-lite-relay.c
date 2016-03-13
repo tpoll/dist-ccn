@@ -776,7 +776,7 @@ size_t get_file_size(FILE *fp)
 }
 
 
-void register_redis_script(struct ccnl_relay_s *theRelay, char *script)
+void register_redis_script(struct ccnl_relay_s *theRelay, char *location, char *script)
 {
     char file_name[2048];
     size_t size = 0;
@@ -798,7 +798,7 @@ void register_redis_script(struct ccnl_relay_s *theRelay, char *script)
     // Load script into redis memory
     redisReply *reply = redisCommand(theRelay->redis_content,"SCRIPT LOAD %b", buff, size); 
     if(!theRelay->redis_content->err) {
-        memcpy(theRelay->interest_add, reply->str, 40); // add sha1 of script to the relay
+        memcpy(location, reply->str, 40); // add sha1 of script to the relay
     }
 
     free(reply);
@@ -821,7 +821,9 @@ void initialize_redis_context(struct ccnl_relay_s *theRelay)
         exit(1);
     }
 
-    register_redis_script(theRelay, "interest_add.lua");
+    register_redis_script(theRelay, theRelay->interest_add, "interest_add.lua");
+    register_redis_script(theRelay, theRelay->interest_consume, "interest_consume.lua");
+
 }
 
 

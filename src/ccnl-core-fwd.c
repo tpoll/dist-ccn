@@ -39,14 +39,10 @@ struct sockaddr_in deserialize_ipv4(char *buff)
 
 void distribute_data(struct ccnl_relay_s *relay, struct ccnl_buf_s *buf, char *content_n, struct ccnl_prefix_s *pfx)
 {
-    redisReply *reply = redisCommand(relay->redis_content,"SET %b %b", 
+
+    redisReply *reply = redisCommand(relay->redis_content,"EVALSHA %b %d %b %b", 
+        relay->interest_consume, sizeof(relay->interest_consume), 1, 
         content_n, strlen(content_n), buf->data, buf->datalen);
-    if (relay->redis_content->err) {fprintf(stderr, "%s\n",  relay->redis_content->errstr); return;}
-
-    free(reply);
-
-    reply = redisCommand(relay->redis_content,"smembers %b%b", 
-        "i-", 2, content_n, strlen(content_n));
 
     if (relay->redis_content->err) {fprintf(stderr, "%s\n",  relay->redis_content->errstr); return;}
 
@@ -58,12 +54,7 @@ void distribute_data(struct ccnl_relay_s *relay, struct ccnl_buf_s *buf, char *c
         fprintf(stdout,"udp sendto %s/%d returned %d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), rc);
     }
 
-
-    reply = redisCommand(relay->redis_content,"del %b%b", 
-    "i-", 2, content_n, strlen(content_n));
-
-    if (relay->redis_content->err) {fprintf(stderr, "%s\n",  relay->redis_content->errstr); return;}
-    
+    free(reply);
 
 }
 

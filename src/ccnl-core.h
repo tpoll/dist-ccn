@@ -116,14 +116,16 @@ struct ccnl_relay_s {
     struct ccnl_forward_s *fib;
     struct ccnl_interest_s *pit;
     struct ccnl_content_s *contents; //, *contentsend;
-    redisContext *redis_content; // shared content sotre
+    redisContext *redis_content; // shared content store
     struct ccnl_buf_s *nonces;
     int contentcnt;             // number of cached items
     int max_cache_entries;      // -1: unlimited
     struct ccnl_if_s ifs[CCNL_MAX_INTERFACES];
     int ifcount;                // number of active interfaces
     char halt_flag;
-    char interest_add[40]; // sha1sum of redis function
+    char interest_add[40]; // sha1sum for increased efficiency
+    char interest_consume[40]; 
+
     struct ccnl_sched_s* (*defaultFaceScheduler)(struct ccnl_relay_s*,
                                                  void(*cts_done)(void*,void*));
     struct ccnl_sched_s* (*defaultInterfaceScheduler)(struct ccnl_relay_s*,
