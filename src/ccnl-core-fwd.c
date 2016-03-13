@@ -22,6 +22,45 @@
 struct ccnl_content_s *ccnl_b2c(struct ccnl_relay_s *ccnl, char *content, size_t size);
 
 // returning 0 if packet was
+
+struct sockaddr_in deserialize_ipv4(char *buff)
+{
+    struct sockaddr_in addr;
+    struct in_addr in;
+
+    memcpy(&addr.sin_family, &buff[0], 2);
+    memcpy(&addr.sin_port, &buff[2], 2);
+    memcpy(&in.s_addr, &buff[4], 4);
+
+    addr.sin_addr = in;
+
+    return addr;
+}
+
+void distribute_data(struct ccnl_relay_s *relay, struct ccnl_buf_s *buf, char *content_n)
+{
+
+    redisReply *reply = redisCommand(relay->redis_content,"SET %b %b", 
+        content_n, strlen(content_n), buf->data, buf->datalen);
+    if (relay->redis_content->err) {fprintf(stderr, "%s\n",  relay->redis_content->errstr); return;}
+
+    free(reply);
+
+    reply = redisCommand(relay->redis_content,"smembers %b%b", 
+        "i-", 2, content_n, strlen(content_n));
+
+    if (relay->redis_content->err) {fprintf(stderr, "%s\n",  relay->redis_content->errstr); return;}
+
+    printf("%s\n", "going into array");
+    for (int i = 0; i < reply->elements; ++i) {
+        printf("content len is %d\n", reply->element[i]->len);
+         struct sockaddr_in addr = deserialize_ipv4(reply->element[i]->str);
+         printf("udp sendto %s/%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+    }
+
+}
+
+
 int
 ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                        struct ccnl_pkt_s **pkt)
@@ -42,7 +81,6 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                   ccnl_suite2str((*pkt)->suite),
                   ccnl_addr2ascii(from ? &from->peer : NULL));
 #endif
-    ccnl_free(s);
 
 #if defined(USE_SUITE_CCNB) && defined(USE_SIGNATURES)
 //  FIXME: mgmt messages for NDN and other suites?
@@ -62,6 +100,7 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
 
     c = ccnl_content_new(relay, pkt);
+    printf("rae buff is %d\n", (int)c->pkt->buf->datalen);
     DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", c->pkt->contlen, c->pkt->content);
     if (!c)
         return 0;
@@ -81,7 +120,9 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
     if (relay->max_cache_entries != 0) { // it's set to -1 or a limit
-        DEBUGMSG_CFWD(DEBUG, "  adding content to cache\n");
+        DEBUGMSG_CFWD(DEBUG, "  adding content to redis\n");
+        distribute_data(relay, c->pkt->buf, s);
+        ccnl_free(s);
         ccnl_content_add2cache(relay, c);
     	DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", c->pkt->contlen, c->pkt->content);
     } else {
@@ -241,6 +282,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         }
         if (i) { // Send out the interest
             printf("Sending int\n");
+            ccnl_interest_append_pending(i, from);
             ccnl_interest_propagate(relay, i);
         }
 }
