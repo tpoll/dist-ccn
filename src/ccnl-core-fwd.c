@@ -37,9 +37,8 @@ struct sockaddr_in deserialize_ipv4(char *buff)
     return addr;
 }
 
-void distribute_data(struct ccnl_relay_s *relay, struct ccnl_buf_s *buf, char *content_n)
+void distribute_data(struct ccnl_relay_s *relay, struct ccnl_buf_s *buf, char *content_n, struct ccnl_prefix_s *pfx)
 {
-
     redisReply *reply = redisCommand(relay->redis_content,"SET %b %b", 
         content_n, strlen(content_n), buf->data, buf->datalen);
     if (relay->redis_content->err) {fprintf(stderr, "%s\n",  relay->redis_content->errstr); return;}
@@ -54,9 +53,17 @@ void distribute_data(struct ccnl_relay_s *relay, struct ccnl_buf_s *buf, char *c
     printf("%s\n", "going into array");
     for (int i = 0; i < reply->elements; ++i) {
         printf("content len is %d\n", reply->element[i]->len);
-         struct sockaddr_in addr = deserialize_ipv4(reply->element[i]->str);
-         printf("udp sendto %s/%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+        struct sockaddr_in addr = deserialize_ipv4(reply->element[i]->str);
+        int rc = sendto(relay->sender, buf->data, buf->datalen, 0, (struct sockaddr*) &addr, sizeof(struct sockaddr_in));
+        fprintf(stdout,"udp sendto %s/%d returned %d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), rc);
     }
+
+
+    reply = redisCommand(relay->redis_content,"del %b%b", 
+    "i-", 2, content_n, strlen(content_n));
+
+    if (relay->redis_content->err) {fprintf(stderr, "%s\n",  relay->redis_content->errstr); return;}
+    
 
 }
 
@@ -121,9 +128,8 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
     if (relay->max_cache_entries != 0) { // it's set to -1 or a limit
         DEBUGMSG_CFWD(DEBUG, "  adding content to redis\n");
-        distribute_data(relay, c->pkt->buf, s);
+        distribute_data(relay, c->pkt->buf, s, c->pkt->pfx);
         ccnl_free(s);
-        ccnl_content_add2cache(relay, c);
     	DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", c->pkt->contlen, c->pkt->content);
     } else {
         DEBUGMSG_CFWD(DEBUG, "  content not added to cache\n");
@@ -184,14 +190,6 @@ void serialize_ip4(sockunion *dest, char* buff)
     memcpy(buff, &dest->ip4.sin_family, 2);
     memcpy(&buff[2], &dest->ip4.sin_port, 2);
     memcpy(&buff[4], &dest->ip4.sin_addr.s_addr, 4);
-
-    // memcpy(&addr.sin_port, &buff[2], sizeof(dest->ip4.sin_port));
-
-    // printf("port is %d\n", ntohs(addr.sin_port));
-
-    // printf(" potential udp sendto %s/%d\n",
-    //              inet_ntoa(buff), ntohs(dest->ip4.sin_port));
-
 }
 
 int
@@ -282,7 +280,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         }
         if (i) { // Send out the interest
             printf("Sending int\n");
-            ccnl_interest_append_pending(i, from);
+            // ccnl_interest_append_pending(i, from);
             ccnl_interest_propagate(relay, i);
         }
 }

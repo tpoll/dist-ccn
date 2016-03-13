@@ -111,6 +111,7 @@ struct ccnl_relay_s {
     time_t startup_time;
 #endif
     int id;
+    int sender;
     struct ccnl_face_s *faces;
     struct ccnl_forward_s *fib;
     struct ccnl_interest_s *pit;

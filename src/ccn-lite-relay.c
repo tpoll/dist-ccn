@@ -25,6 +25,7 @@
 #include <regex.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+ #include <sys/socket.h>
 
 #define CCNL_UNIX
 
@@ -938,6 +939,11 @@ usage:
     DEBUGMSG(INFO, "  compile time: %s %s\n", __DATE__, __TIME__);
     DEBUGMSG(INFO, "  compile options: %s\n", compile_string);
 //    DEBUGMSG(INFO, "using suite %s\n", ccnl_suite2str(suite));
+
+    if ((theRelay.sender = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("cannot create socket");
+        return 0;
+    }
 
     ccnl_relay_config(&theRelay, ethdev, udpport1, udpport2, httpport,
                       uxpath, suite, max_cache_entries, crypto_sock_path);
