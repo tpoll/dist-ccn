@@ -2,23 +2,39 @@ import argparse
 import socket
 import time
 import select
-import multiprocessing
+from multiprocessing import Process, Queue, cpu_count
+
 
 import ccnlite.ndn2013 as ndn
 import ccnlite.util as util
 
 
+p_load = time.time()
+
+
+def worker(socket, name, ip, port, queue):
+    while True:
+        req = ndn.mkInterest(name)
+        before = time.time()
+        socket.sendto(req, (ip, int(port)))
+        data, server = socket.recvfrom(4096)
+        after = time.time()
+        queue.put((after - before) * 1000)
+        time.sleep(.1)
+
+
+def computeAvgLatency(queue):
+    numRequests = 0
+    totalLat = 0 #In milliseconds
+    while True:
+        l = queue.get()
+        numRequests += 1
+        totalLat += l
+
+        print "At second %d there has been %d requests with an average latency of %f ms" % ((time.time() - p_load), numRequests, (totalLat/ numRequests))
 
 
 
-def worker(socket, name, ip, port):
-    req = ndn.mkInterest(name)
-    before = time.time()
-    socket.sendto(req, (ip, int(port)))
-    data, server = socket.recvfrom(4096)
-    after = time.time()
-    print ((after - before) * 1000)
-    print data
 
 def main():
     parser = argparse.ArgumentParser(description='Test latency of ndn nodes')
@@ -32,19 +48,24 @@ def main():
     args = parser.parse_args()
     name = util.str2lci(args.lci)
     (ip, port) = args.u.split('/')
+    queue = Queue()
 
-    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, multiprocessing.cpu_count())]
+    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, cpu_count())]
 
 
 
     # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
-    workers = [multiprocessing.Process(target=worker, args=(s, name, ip, port)) for s in sockets]
+    workers = [Process(target=worker, args=(s, name, ip, port, queue)) for s in sockets]
+    reader = Process(target=computeAvgLatency, args=(queue,))
 
     for p in workers:
         print "here"
         p.daemon = True
         p.start()
+
+    reader.daemon = True
+    reader.start()
 
     while True:
         try:
