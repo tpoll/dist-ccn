@@ -27,14 +27,13 @@ def main():
     parser.add_argument('-u', metavar='host/port', type=str,
                     help='UDP addr of access router (default: 127.0.0.1/9998)',
                     default='127.0.0.1/9998')
-    parser.add_argument('-c', metavar='5', type=int, help='number of clients', default=10)
     
 
     args = parser.parse_args()
     name = util.str2lci(args.lci)
     (ip, port) = args.u.split('/')
 
-    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, args.c)]
+    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, multiprocessing.cpu_count())]
 
 
 
