@@ -9,7 +9,7 @@ import ccnlite.ndn2013 as ndn
 import ccnlite.util as util
 
 
-p_load = time.time()
+startTime = time.time()
 
 
 def worker(socket, name, ip, port, queue):
@@ -20,7 +20,7 @@ def worker(socket, name, ip, port, queue):
         data, server = socket.recvfrom(4096)
         after = time.time()
         queue.put((after - before) * 1000)
-        time.sleep(.1)
+        # time.sleep(.01)
 
 
 def computeAvgLatency(queue):
@@ -31,9 +31,7 @@ def computeAvgLatency(queue):
         numRequests += 1
         totalLat += l
 
-        print "At second %d there has been %d requests with an average latency of %f ms" % ((time.time() - p_load), numRequests, (totalLat/ numRequests))
-
-
+        print "At second %d there has been %d requests with an average latency of %f ms" % ((time.time() - startTime), numRequests, (totalLat/ numRequests))
 
 
 def main():
@@ -52,10 +50,6 @@ def main():
 
     sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, cpu_count())]
 
-
-
-    # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    
     workers = [Process(target=worker, args=(s, name, ip, port, queue)) for s in sockets]
     reader = Process(target=computeAvgLatency, args=(queue,))
 
