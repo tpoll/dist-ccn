@@ -48,7 +48,7 @@ def main():
     (ip, port) = args.u.split('/')
     queue = Queue()
 
-    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, cpu_count())]
+    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, cpu_count() + 2)]
 
     workers = [Process(target=worker, args=(s, name, ip, port, queue)) for s in sockets]
     reader = Process(target=computeAvgLatency, args=(queue,))

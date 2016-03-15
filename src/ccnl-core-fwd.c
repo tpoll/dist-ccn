@@ -220,16 +220,16 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     // Step 1: search in content store
     DEBUGMSG_CFWD(DEBUG, "  searching in CS\n");
     char *content_n = ccnl_prefix_to_path((*pkt)->pfx);
-    printf("the content name is %s\n", content_n);
+    // printf("the content name is %s\n", content_n);
 
     redisReply *reply = redisCommand(relay->redis_content,"GET %b", content_n, strlen(content_n));
-    printf("Redis got: %s\n", reply->str);
+    // printf("Redis got: %s\n", reply->str);
     if (reply->str) {
         c = ccnl_b2c(relay, reply->str, reply->len);
         (void)c;
         DEBUGMSG_CFWD(DEBUG, "  found matching content %p\n", (void *) c);
         if (from->ifndx >= 0) {
-            printf("ifndx is %d \n", from->ifndx);
+            // printf("ifndx is %d \n", from->ifndx);
             ccnl_nfn_monitor(relay, from, c->pkt->pfx, c->pkt->content,
                              c->pkt->contlen);
             ccnl_face_enqueue(relay, from, buf_dup(c->pkt->buf));
