@@ -18,7 +18,8 @@ def worker(socket, name, ip, port, queue):
         before = time.time()
         socket.sendto(req, (ip, int(port)))
         print socket.getsockname()
-        data, server = socket.recvfrom(4096)
+        data, addr = socket.recvfrom(1000)
+        print addr
         after = time.time()
         print ((after - before) * 1000)
         queue.put((after - before) * 1000)
@@ -50,7 +51,7 @@ def main():
     (ip, port) = args.u.split('/')
     queue = Queue()
 
-    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, 1)]
+    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, 4)]
 
     workers = [Process(target=worker, args=(s, name, ip, port, queue)) for s in sockets]
     reader = Process(target=computeAvgLatency, args=(queue,))
