@@ -942,7 +942,7 @@ usage:
     DEBUGMSG(INFO, "  compile options: %s\n", compile_string);
 //    DEBUGMSG(INFO, "using suite %s\n", ccnl_suite2str(suite));
 
-    if ((theRelay.sender = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    if ((theRelay.sender = socket(AF_INET, SOCK_DGRAM)) < 0) {
         perror("cannot create socket");
         return 0;
     }

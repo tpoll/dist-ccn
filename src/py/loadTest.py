@@ -17,8 +17,10 @@ def worker(socket, name, ip, port, queue):
         req = ndn.mkInterest(name)
         before = time.time()
         socket.sendto(req, (ip, int(port)))
+        print socket.getsockname()
         data, server = socket.recvfrom(4096)
         after = time.time()
+        print ((after - before) * 1000)
         queue.put((after - before) * 1000)
         # time.sleep(.5)
 
@@ -31,7 +33,7 @@ def computeAvgLatency(queue):
         numRequests += 1
         totalLat += l
 
-        print "At second %d there has been %d requests with an average latency of %f ms" % ((time.time() - startTime), numRequests, (totalLat/ numRequests))
+        # print "At second %d there has been %d requests with an average latency of %f ms" % ((time.time() - startTime), numRequests, (totalLat/ numRequests))
 
 
 def main():
@@ -48,7 +50,7 @@ def main():
     (ip, port) = args.u.split('/')
     queue = Queue()
 
-    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, cpu_count() + 2)]
+    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, 1)]
 
     workers = [Process(target=worker, args=(s, name, ip, port, queue)) for s in sockets]
     reader = Process(target=computeAvgLatency, args=(queue,))
