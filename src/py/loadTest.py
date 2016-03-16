@@ -20,7 +20,7 @@ def worker(socket, name, ip, port, queue):
         data, server = socket.recvfrom(4096)
         after = time.time()
         queue.put((after - before) * 1000)
-        # time.sleep(.01)
+        # time.sleep(.5)
 
 
 def computeAvgLatency(queue):
