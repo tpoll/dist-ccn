@@ -7,6 +7,7 @@ from multiprocessing import Process, Queue, cpu_count
 
 import ccnlite.ndn2013 as ndn
 import ccnlite.util as util
+import sys
 
 
 startTime = time.time()
@@ -23,6 +24,7 @@ def worker(socket, name, ip, port, queue):
         after = time.time()
         print ((after - before) * 1000)
         queue.put((after - before) * 1000)
+        sys.exit(1)
         # time.sleep(.5)
 
 
@@ -51,7 +53,7 @@ def main():
     (ip, port) = args.u.split('/')
     queue = Queue()
 
-    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, 4)]
+    sockets = [socket.socket(socket.AF_INET, socket.SOCK_DGRAM) for x in xrange(0, 1)]
 
     workers = [Process(target=worker, args=(s, name, ip, port, queue)) for s in sockets]
     reader = Process(target=computeAvgLatency, args=(queue,))
