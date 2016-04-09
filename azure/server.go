@@ -12,11 +12,19 @@ import (
 	"sync"
 )
 
+const (
+	debugFlag  = "-v"
+	debugLevel = "trace"
+	lCacheFlag = "-d"
+	lCachePath = "/home/todd/dist-ccn/test/ndntlv"
+)
+
 type ProcInfo struct {
-	Id    string `json:"id"`
-	proc  *exec.Cmd
-	Debug bool `json:"debug"`
-	Dist  bool `json:"dist"`
+	Id         string `json:"id"`
+	proc       *exec.Cmd
+	Debug      bool `json:"debug"`
+	Dist       bool `json:"dist"`
+	LocalCache bool `json:"local_cache"`
 }
 
 type SafeMap struct {
@@ -85,11 +93,11 @@ func startCCN(w http.ResponseWriter, r *http.Request, nodes *SafeMap, active *bo
 		tempStruct := new(ProcInfo)
 		response, _ := ioutil.ReadAll(r.Body)
 		json.Unmarshal(response, &tempStruct)
-
 		nodes.Lock()
 		if pid, ok := nodes.m[tempStruct.Id]; ok {
 			Warning.Printf("ccn-relay  on %s is already running", pid.Id)
 		} else {
+			fmt.Println(tempStruct)
 			fmt.Println(tempStruct.Id)
 			proc, err := runCommand(tempStruct)
 			if err == nil {
@@ -105,29 +113,35 @@ func startCCN(w http.ResponseWriter, r *http.Request, nodes *SafeMap, active *bo
 }
 
 func runCommand(data *ProcInfo) (*exec.Cmd, error) {
-	debugLevel := ""
-	debugFlag := ""
-
 	version := "ccn-lite"
-
-	if data.Debug {
-		debugFlag = "-v"
-		debugLevel = "trace"
-	}
 	if data.Dist {
 		version = "dist-ccn"
 	}
 
-	outfile, err := os.Create("log.txt")
+	args := []string{"-s", "ndn2013", "-u", "9980"}
+
+	if data.Debug {
+		args = append(args, debugFlag)
+		args = append(args, debugLevel)
+	}
+
+	if data.LocalCache {
+		fmt.Println("lcache variablessd")
+		args = append(args, lCacheFlag)
+		args = append(args, lCachePath)
+	}
+
+	outfile, err := os.Create("ccnRelaylog.txt")
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println("about to call command")
 	os.Setenv("CCNL_HOME", "/home/todd/dist-ccn")
-	cmd := exec.Command(fmt.Sprintf("/home/todd/%s/bin/ccn-lite-relay", version), "-s", "ndn2013", debugFlag, debugLevel, "-u", "9980")
+	cmd := exec.Command(fmt.Sprintf("/home/todd/%s/bin/ccn-lite-relay", version), args...)
 	cmd.Stdout = outfile
 	cmd.Stderr = outfile
+	fmt.Println(cmd.Args)
 	err = cmd.Start()
 	if err != nil {
 		return nil, err

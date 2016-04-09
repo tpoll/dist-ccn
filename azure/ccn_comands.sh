@@ -11,3 +11,6 @@ FACEID=`$CCNL_HOME/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-b.sock newUDPface any 40
 
 #hello world packet
 "\x061\a\x16\b\x03ndn\b\x04test\b\tmycontent\x14\x00\x15\x0chello world\n\x16\x05\x1b\x01\x00\x1c\x00\x17\x00"
+
+
+$CCNL_HOME/bin/ccn-lite-relay -v -s ndn2013 -u 9980-d $CCNL_HOME/test/ndntlv

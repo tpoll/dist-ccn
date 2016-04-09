@@ -39,4 +39,4 @@ class ApiUser(NdnUdpLocust):
         @task
         def get_content(self):
             req = ndn.mkInterest(['ndn', 'test', 'mycontent'])
-            self.client.get(req, ("40.114.40.235", 9980))
+            self.client.get(req, ("40.76.21.242", 9980))
