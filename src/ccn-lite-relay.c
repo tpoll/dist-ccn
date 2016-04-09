@@ -808,7 +808,7 @@ void initialize_redis_context(struct ccnl_relay_s *theRelay)
 {
     struct timeval timeout = { 1, 500000 }; // 1.5 seconds
 
-    theRelay->redis_content = redisConnectWithTimeout("40.121.59.100",  6379, timeout); // hardcode for local testing
+    theRelay->redis_content = redisConnectWithTimeout("40.117.103.238",  6379, timeout); // hardcode for local testing
     
     if (theRelay->redis_content == NULL || theRelay->redis_content->err) {
         if (theRelay->redis_content) {
