@@ -1,3 +1,4 @@
+#!/bin/bash
 cat <<EOF >  /etc/init.d/serverStart
 #!/bin/sh
 cd /home/todd

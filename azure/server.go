@@ -29,19 +29,24 @@ type ProcInfo struct {
 	RedisIp    string `json:"redis_ip"`
 }
 
+type FaceInfo struct {
+	TargetIp string `json:"target_ip"`
+	Prefix   string `json:"prefix"`
+}
+
 type SafeMap struct {
 	m map[string]*ProcInfo
 	sync.RWMutex
 }
 
 var (
-	Warning *log.Logger
-	Error   *log.Logger
+	Info  *log.Logger
+	Error *log.Logger
 )
 
-func Init(warningHandle io.Writer, errorHandle io.Writer) {
-	Warning = log.New(warningHandle,
-		"WARNING: ",
+func Init(InfoHandle io.Writer, errorHandle io.Writer) {
+	Info = log.New(InfoHandle,
+		"Info: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
 
 	Error = log.New(errorHandle,
@@ -63,6 +68,7 @@ func main() {
 	http.HandleFunc("/stop", func(w http.ResponseWriter, r *http.Request) {
 		stopCCN(w, r, &nodes, &active)
 	})
+	http.HandleFunc("/face", addFace)
 
 	http.ListenAndServe(":8000", nil)
 }
@@ -74,15 +80,20 @@ func heartbeat(w http.ResponseWriter, r *http.Request, active *bool) {
 }
 
 func stopCCN(w http.ResponseWriter, r *http.Request, nodes *SafeMap, active *bool) {
-	Warning.Println("stopping ccn node")
+	Info.Println("stopping ccn node")
 	if r.Method == "POST" {
 		tempStruct := new(ProcInfo)
 		response, _ := ioutil.ReadAll(r.Body)
 		json.Unmarshal(response, &tempStruct)
 		*active = false
 		nodes.Lock()
-		nodes.m[tempStruct.Id].proc.Process.Kill()
-		nodes.m[tempStruct.Id].proc.Process.Wait()
+		pid := nodes.m[tempStruct.Id].proc.Process.Pid
+		Info.Println(pid)
+		cmd := exec.Command("sudo", "killall", "ccn-lite-relay")
+		err := cmd.Start()
+		if err != nil {
+			Error.Println(err)
+		}
 		delete(nodes.m, tempStruct.Id)
 		nodes.Unlock()
 	}
@@ -90,14 +101,14 @@ func stopCCN(w http.ResponseWriter, r *http.Request, nodes *SafeMap, active *boo
 
 // Starts up the ccn process with heartbeat
 func startCCN(w http.ResponseWriter, r *http.Request, nodes *SafeMap, active *bool) {
-	Warning.Println("starting ccn node")
+	Info.Println("starting ccn node")
 	if r.Method == "POST" {
 		tempStruct := new(ProcInfo)
 		response, _ := ioutil.ReadAll(r.Body)
 		json.Unmarshal(response, &tempStruct)
 		nodes.Lock()
 		if pid, ok := nodes.m[tempStruct.Id]; ok {
-			Warning.Printf("ccn-relay  on %s is already running", pid.Id)
+			Info.Printf("ccn-relay  on %s is already running", pid.Id)
 		} else {
 			fmt.Println(tempStruct)
 			fmt.Println(tempStruct.Id)
@@ -107,6 +118,7 @@ func startCCN(w http.ResponseWriter, r *http.Request, nodes *SafeMap, active *bo
 				nodes.m[tempStruct.Id] = tempStruct
 				*active = true
 			} else {
+				w.WriteHeader(500)
 				Error.Printf("ERROR: command for %s failed with code %s\n", tempStruct.Id, err)
 			}
 		}
@@ -116,11 +128,13 @@ func startCCN(w http.ResponseWriter, r *http.Request, nodes *SafeMap, active *bo
 
 func runCommand(data *ProcInfo) (*exec.Cmd, error) {
 	version := "ccn-lite"
-
-	args := []string{"-s", "ndn2013", "-u", "9980", "-x", "/tmp/mgmt-relay-a.sock"}
-
 	if data.Dist {
 		version = "dist-ccn"
+	}
+
+	args := []string{fmt.Sprintf("/home/todd/%s/bin/ccn-lite-relay", version), "-s", "ndn2013", "-u", "9980", "-x", "/tmp/mgmt-relay-a.sock"}
+
+	if data.Dist {
 		args = append(args, redisIpFlag)
 		args = append(args, data.RedisIp)
 
@@ -132,7 +146,6 @@ func runCommand(data *ProcInfo) (*exec.Cmd, error) {
 	}
 
 	if data.LocalCache {
-		fmt.Println("lcache variablessd")
 		args = append(args, lCacheFlag)
 		args = append(args, lCachePath)
 	}
@@ -144,7 +157,7 @@ func runCommand(data *ProcInfo) (*exec.Cmd, error) {
 
 	fmt.Println("about to call command")
 	os.Setenv("CCNL_HOME", "/home/todd/dist-ccn")
-	cmd := exec.Command(fmt.Sprintf("/home/todd/%s/bin/ccn-lite-relay", version), args...)
+	cmd := exec.Command("sudo", args...)
 	cmd.Stdout = outfile
 	cmd.Stderr = outfile
 	fmt.Println(cmd.Args)
@@ -153,5 +166,24 @@ func runCommand(data *ProcInfo) (*exec.Cmd, error) {
 		return nil, err
 	} else {
 		return cmd, nil
+	}
+}
+
+func addFace(w http.ResponseWriter, r *http.Request) {
+	Info.Println("Adding Face")
+	if r.Method == "POST" {
+		tempStruct := new(FaceInfo)
+		response, _ := ioutil.ReadAll(r.Body)
+		json.Unmarshal(response, &tempStruct)
+		Info.Println(tempStruct)
+		os.Setenv("CCNL_HOME", "/home/todd/dist-ccn")
+		cmd := exec.Command("sudo", "sh", "/home/todd/add_face.sh", tempStruct.TargetIp, tempStruct.Prefix)
+		out, err := cmd.Output()
+		if err != nil {
+			w.WriteHeader(500)
+			Error.Printf("Error, no face created %s", err)
+		} else {
+			Info.Println(out)
+		}
 	}
 }
