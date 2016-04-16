@@ -804,11 +804,11 @@ void register_redis_script(struct ccnl_relay_s *theRelay, char *location, char *
     free(reply);
 }
 
-void initialize_redis_context(struct ccnl_relay_s *theRelay)
+void initialize_redis_context(struct ccnl_relay_s *theRelay, char *redisIp)
 {
     struct timeval timeout = { 1, 500000 }; // 1.5 seconds
 
-    theRelay->redis_content = redisConnectWithTimeout("40.117.103.238",  6379, timeout); // hardcode for local testing
+    theRelay->redis_content = redisConnectWithTimeout(redisIp,  6379, timeout); // set with -z flag
     
     if (theRelay->redis_content == NULL || theRelay->redis_content->err) {
         if (theRelay->redis_content) {
@@ -834,7 +834,7 @@ main(int argc, char **argv)
 {
     int opt, max_cache_entries = -1, httpport = -1;
     int udpport1 = -1, udpport2 = -1;
-    char *datadir = NULL, *ethdev = NULL, *crypto_sock_path = NULL;
+    char *datadir = NULL, *ethdev = NULL, *crypto_sock_path = NULL, *redisIp=NULL;
 #ifdef USE_UNIXSOCKET
     char *uxpath = CCNL_DEFAULT_UNIXSOCKNAME;
 #else
@@ -847,13 +847,16 @@ main(int argc, char **argv)
     time(&theRelay.startup_time);
     srandom(time(NULL));
 
-    while ((opt = getopt(argc, argv, "hc:d:e:g:i:o:p:s:t:u:v:x:")) != -1) {
+    while ((opt = getopt(argc, argv, "hc:d:z:e:g:i:o:p:s:t:u:v:x:")) != -1) {
         switch (opt) {
         case 'c':
             max_cache_entries = atoi(optarg);
             break;
         case 'd':
             datadir = optarg;
+            break;
+        case 'z':
+            redisIp = optarg;
             break;
         case 'e':
             ethdev = optarg;
@@ -964,7 +967,7 @@ usage:
     }
 #endif
 
-    initialize_redis_context(&theRelay);
+    initialize_redis_context(&theRelay, redisIp);
     ccnl_io_loop(&theRelay);
 
     while (eventqueue)

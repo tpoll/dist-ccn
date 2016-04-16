@@ -13,18 +13,20 @@ import (
 )
 
 const (
-	debugFlag  = "-v"
-	debugLevel = "trace"
-	lCacheFlag = "-d"
-	lCachePath = "/home/todd/dist-ccn/test/ndntlv"
+	debugFlag   = "-v"
+	debugLevel  = "trace"
+	lCacheFlag  = "-d"
+	lCachePath  = "/home/todd/dist-ccn/test/ndntlv"
+	redisIpFlag = "-z"
 )
 
 type ProcInfo struct {
 	Id         string `json:"id"`
 	proc       *exec.Cmd
-	Debug      bool `json:"debug"`
-	Dist       bool `json:"dist"`
-	LocalCache bool `json:"local_cache"`
+	Debug      bool   `json:"debug"`
+	Dist       bool   `json:"dist"`
+	LocalCache bool   `json:"local_cache"`
+	RedisIp    string `json:"redis_ip"`
 }
 
 type SafeMap struct {
@@ -114,11 +116,15 @@ func startCCN(w http.ResponseWriter, r *http.Request, nodes *SafeMap, active *bo
 
 func runCommand(data *ProcInfo) (*exec.Cmd, error) {
 	version := "ccn-lite"
+
+	args := []string{"-s", "ndn2013", "-u", "9980", "-x", "/tmp/mgmt-relay-a.sock"}
+
 	if data.Dist {
 		version = "dist-ccn"
-	}
+		args = append(args, redisIpFlag)
+		args = append(args, data.RedisIp)
 
-	args := []string{"-s", "ndn2013", "-u", "9980"}
+	}
 
 	if data.Debug {
 		args = append(args, debugFlag)

@@ -9,3 +9,11 @@ cd /home/todd/hiredis/ && sudo make && sudo make install
 cd /home/todd/dist-ccn/src/ && make
 cd /home/todd/ccn-lite/src/ && make
 sudo ldconfig
+
+
+export CCNL_HOME="/home/todd/dist-ccn"
+echo " fook" | ($CCNL_HOME/bin/ccn-lite-mkC -s ndn2013 "/ndn/test/mycontent" > $CCNL_HOME/test/ndntlv/mycontent.ndntlv)
+./server > slog.txt &
+
+
+sudo sh create_start_script.sh
