@@ -14,3 +14,7 @@ FACEID=`$CCNL_HOME/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-b.sock newUDPface any 40
 
 
 $CCNL_HOME/bin/ccn-lite-relay -v -s ndn2013 -u 9980-d $CCNL_HOME/test/ndntlv
+
+
+locust --host=40.114.40.235 -f dist-ccn/src/py/locustfile.py --master
+locust --host=40.114.40.235 -f dist-ccn/src/py/locustfile.py --slave --master-host=40.76.211.193

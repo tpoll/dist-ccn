@@ -49,7 +49,6 @@ void distribute_data(struct ccnl_relay_s *relay, struct ccnl_buf_s *buf, char *c
 
     printf("%s\n", "going into array");
     for (int i = 0; i < reply->elements; ++i) {
-        printf("content len is %d\n", reply->element[i]->len);
         struct sockaddr_in addr = deserialize_ipv4(reply->element[i]->str);
         int rc = sendto(sock, buf->data, buf->datalen, 0, (struct sockaddr*) &addr, sizeof(struct sockaddr_in));
         fprintf(stdout,"udp sendto %s/%d returned %d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), rc);
