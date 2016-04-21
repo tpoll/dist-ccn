@@ -132,7 +132,7 @@ func runCommand(data *ProcInfo) (*exec.Cmd, error) {
 		version = "dist-ccn"
 	}
 
-	args := []string{fmt.Sprintf("/home/todd/%s/bin/ccn-lite-relay", version), "-s", "ndn2013", "-u", "9980", "-x", "/tmp/mgmt-relay-a.sock"}
+	args := []string{"--preserve-env", fmt.Sprintf("/home/todd/%s/bin/ccn-lite-relay", version), "-s", "ndn2013", "-u", "9980", "-x", "/tmp/mgmt-relay-a.sock"}
 
 	if data.Dist {
 		args = append(args, redisIpFlag)

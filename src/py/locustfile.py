@@ -2,13 +2,14 @@ import time
 import socket
 import ccnlite.ndn2013 as ndn
 import ccnlite.util as util
+import sys
 from locust import Locust, events, task, TaskSet
 
 
 class NdnUdpClient:
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # self.socket.settimeout(1)S
+        self.socket.settimeout(2)
 
     #Ndn content string and (ip, port) 
     def get(self, req, host):
@@ -33,10 +34,10 @@ class NdnUdpLocust(Locust):
 class ApiUser(NdnUdpLocust):
     min_wait = 50
     max_wait = 2000
-    name = util.str2lci("/ndn/test/mycontent")
+    print dir(NdnUdpLocust)
 
     class task_set(TaskSet):
         @task
         def get_content(self):
-            req = ndn.mkInterest(['ndn', 'test', 'mycontent'])
-            self.client.get(req, ("40.76.21.242", 9980))
+            req = ndn.mkInterest(['ndn', 'test', 'mycontent1'])
+            self.client.get(req, (sys.argv[1].split("=")[1], 9980))
