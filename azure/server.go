@@ -86,16 +86,21 @@ func stopCCN(w http.ResponseWriter, r *http.Request, nodes *SafeMap, active *boo
 		response, _ := ioutil.ReadAll(r.Body)
 		json.Unmarshal(response, &tempStruct)
 		*active = false
-		nodes.Lock()
-		pid := nodes.m[tempStruct.Id].proc.Process.Pid
-		Info.Println(pid)
-		cmd := exec.Command("sudo", "killall", "ccn-lite-relay")
-		err := cmd.Start()
-		if err != nil {
-			Error.Println(err)
+		if _, ok := nodes.m[tempStruct.Id]; ok {
+			nodes.Lock()
+			pid := nodes.m[tempStruct.Id].proc.Process.Pid
+			Info.Println(pid)
+			cmd := exec.Command("sudo", "killall", "ccn-lite-relay")
+			err := cmd.Start()
+			if err != nil {
+				Error.Println(err)
+			}
+			delete(nodes.m, tempStruct.Id)
+			nodes.Unlock()
+		} else {
+			w.WriteHeader(404)
+			Info.Printf("no node to stop")
 		}
-		delete(nodes.m, tempStruct.Id)
-		nodes.Unlock()
 	}
 }
 
