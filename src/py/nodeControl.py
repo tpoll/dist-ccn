@@ -9,7 +9,7 @@ TARGET_PORT = 9980
 
 
 def main():
-    nodes = [1, 2, 3] # Ip addresses of target node group as strings
+    nodes = ["127.0.0.1"] # Ip addresses of target node group as strings
     set_size = len(nodes)
 
     startAllNodes(nodes)
@@ -65,8 +65,18 @@ def sendRequest(ip_addr, action):
             "local_cache": False,
             "redis_ip": REDIS_IP
         }
-    # request.get(ip_addr:8000/action, TARGET_PORT, args)
-    timePrint("Sending %s request to node %s with arguments %s" % (action, ip_addr, args)) 
+    try:
+        r = requests.post("http://" + ip_addr + ":8000/" + action, data = args)
+        if r.status_code == requests.codes.ok:
+            timePrint(" %s request to node %s with arguments %s" % (action, ip_addr, args))
+        else:
+            timePrint("FAILED: request to node %s with arguments %s, CODE: %s" % (action, ip_addr, args, r.status_code))
+    except Exception, e:
+        timePrint("Raised %s" % (e))
+
+
+
+
 
 
 def timePrint(message):
