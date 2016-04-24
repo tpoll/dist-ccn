@@ -16,9 +16,9 @@ def main():
 
     args = {
     "id" : "1",
-    "dist" : True,
+    "dist" : False,
     "debug" : True,
-    "local_cache": False,
+    "local_cache": True,
     "redis_ip": REDIS_IP
     }
     nodes = ["40.114.2.34", "40.76.29.216", "40.76.58.113"] # Ip addresses of target node group as strings
