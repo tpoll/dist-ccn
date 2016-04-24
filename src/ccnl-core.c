@@ -523,7 +523,9 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i) /* TO
 /*
     if (!i)
         return NULL;
-*/
+*/  
+    char *content_n = ccnl_prefix_to_path(i->pkt->pfx);
+    redisReply *reply = redisCommand(relay->redis_content,"Del i-%b", content_n, strlen(content_n));
     DEBUGMSG_CORE(TRACE, "ccnl_interest_remove %p\n", (void *) i);
 
 /*
