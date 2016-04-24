@@ -245,10 +245,10 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     serialize_ip4(&from->peer, buff);
     reply = redisCommand(relay->redis_content,"EVALSHA %b %d %b%b %b", 
     relay->interest_add, sizeof(relay->interest_add), 1, "i-", 2, content_n, strlen(content_n), buff, 8);
-    printf("Redis got: %lld\n", reply->integer);
+    DEBUGMSG_CFWD(DEBUG, "   Redis got: %lld\n", reply->integer);
 
     if (relay->redis_content->err) {
-        fprintf(stderr, "NOT creating interest, issue with redis\n");
+        DEBUGMSG_CFWD(DEBUG, "NOT creating interest, issue with redis\n");
         return 0;
     }
 
@@ -270,7 +270,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         ccnl_free(s);
         }
         if (i) { // Send out the interest
-            printf("Sending int\n");
             // ccnl_interest_append_pending(i, from);
             ccnl_interest_propagate(relay, i);
         }
