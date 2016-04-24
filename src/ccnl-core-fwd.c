@@ -45,9 +45,10 @@ void distribute_data(struct ccnl_relay_s *relay, struct ccnl_buf_s *buf, char *c
         relay->interest_consume, sizeof(relay->interest_consume), 1, 
         content_n, strlen(content_n), buf->data, buf->datalen);
 
-    if (relay->redis_content->err) {fprintf(stderr, "%s\n",  relay->redis_content->errstr); return;}
+        
+    if (relay->redis_content->err) {DEBUGMSG_CFWD(DEBUG, "%s\n", relay->redis_content->errstr); return;}
 
-    printf("%s\n", "going into array");
+    DEBUGMSG_CFWD(DEBUG, "  about to send to %d clients\n", (int)reply->elements);
     for (int i = 0; i < reply->elements; ++i) {
         struct sockaddr_in addr = deserialize_ipv4(reply->element[i]->str);
         int rc = sendto(sock, buf->data, buf->datalen, 0, (struct sockaddr*) &addr, sizeof(struct sockaddr_in));
