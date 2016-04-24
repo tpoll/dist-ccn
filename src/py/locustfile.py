@@ -18,7 +18,7 @@ class NdnUdpClient:
             start_time = time.time()
             self.socket.sendto(req, host)
             data, addr = self.socket.recvfrom(1000)
-        except socket.timeout, e:
+        except Exception e:
             total_time = float((time.time() - start_time) * 1000)
             events.request_failure.fire(request_type="udp", name="content", response_time=total_time, exception=e)
         else:

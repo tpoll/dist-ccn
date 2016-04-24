@@ -24,9 +24,11 @@ def main():
     nodes = ["40.114.2.34", "40.76.29.216", "40.76.58.113"] # Ip addresses of target node group as strings
     set_size = len(nodes)
 
+    print "Testing %d nodes with %d iterations down each for %d" % (set_size, ITERATIONS, DOWN_INTERVAL)
+
+
     startAllNodes(nodes, args)
 
-    print "got here"
     killNodesOrdered(nodes, set_size, args)
 
 
@@ -59,7 +61,7 @@ def startAllNodes(nodes, args):
         sendRequest(node, 'start', args)
         registerDataNode(node)
 
-    time.sleep(35)
+    time.sleep(20)
 
 
 def stopAllNodes(nodes, args):
