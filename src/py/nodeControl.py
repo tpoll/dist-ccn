@@ -4,9 +4,9 @@ import random
 import json
 
 DOWN_INTERVAL = 45
-ITERATIONS = 8
-REDIS_IP = "104.41.158.210"
-DATA_NODE_IP = "13.92.195.16"
+ITERATIONS = 3
+REDIS_IP = "13.82.31.113"
+DATA_NODE_IP = "13.93.222.201"
 TARGET_PORT = 9980
 
 
@@ -17,20 +17,19 @@ def main():
     args = {
     "id" : "1",
     "dist" : False,
-    "debug" : True,
-    "local_cache": True,
+    "debug" : False,
+    "local_cache": False,
     "redis_ip": REDIS_IP
     }
-    nodes = ["40.114.2.34", "40.76.29.216", "40.76.58.113"] # Ip addresses of target node group as strings
+    nodes = ["13.82.26.131", "13.82.31.70", "13.82.27.239"] # Ip addresses of target node group as strings
     set_size = len(nodes)
 
     print "Testing %d nodes with %d iterations down each for %d" % (set_size, ITERATIONS, DOWN_INTERVAL)
 
-
     startAllNodes(nodes, args)
 
-    killNodesOrdered(nodes, set_size, args)
-
+    # killNodesOrdered(nodes, set_size, args)
+    time.sleep(3*45)
 
     stopAllNodes(nodes, args)
 
@@ -42,6 +41,8 @@ def killRandomNode(nodes, set_size, args):
         sendRequest(nodes[ip], 'stop', args)        
         time.sleep(DOWN_INTERVAL)
         sendRequest(nodes[ip], 'start', args)
+        registerDataNode(nodes[ip])
+
 
 def killNodesOrdered(nodes, set_size, args):
     '''Given a list[string]: nodes, int: set_size, kills and the restarts to nodes in order
@@ -51,6 +52,7 @@ def killNodesOrdered(nodes, set_size, args):
         sendRequest(nodes[ip], 'stop', args)        
         time.sleep(DOWN_INTERVAL)
         sendRequest(nodes[ip], 'start', args)
+        registerDataNode(nodes[ip])
 
 
 
@@ -59,6 +61,7 @@ def startAllNodes(nodes, args):
     print timePrint("Starting all nodes")
     for node in nodes:
         sendRequest(node, 'start', args)
+        time.sleep(1)
         registerDataNode(node)
 
     time.sleep(20)

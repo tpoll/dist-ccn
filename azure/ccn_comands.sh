@@ -1,3 +1,4 @@
+#Example commands used in project
 $CCNL_NORM/bin/ccn-lite-relay -v trace -s ndn2013 -u 9999 -x /tmp/mgmt-relay-b.sock -d $CCNL_NORM/test/ndntlv
 $CCNL_HOME/bin/ccn-lite-relay -v trace -s ndn2013 -u 9998 -x /tmp/mgmt-relay-a.sock
 
@@ -8,7 +9,7 @@ $CCNL_HOME/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-b.sock prefixreg /ndn $FACEID nd
 FACEID=`$CCNL_HOME/bin/ccn-lite-ctrl -x /tmp/mgmt-relay-b.sock newUDPface any 40.114.10.98 9999 \ | $CCNL_HOME/bin/ccn-lite-ccnb2xml | grep FACEID | sed -e 's/^[^0-9]*\([0-9]\+\).*/\1/'`
 
 
-#hello world packet
+#hello world packet as stored by redis
 "\x06:\a\x17\b\x03ndn\b\x04test\b\nmycontent1\x14\x00\x15\x14Hello, data world 1\n\x16\x05\x1b\x01\x00\x1c\x00\x17\x00"
 
 

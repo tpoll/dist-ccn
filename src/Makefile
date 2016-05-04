@@ -14,8 +14,8 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 CC?=gcc
 
-#REDIS
-REDISLIB = /home/todd/hiredis/
+#Redis ## Change redislib to location of hiredis install
+REDISLIB = "$(HOME)/hiredis/"
 CREDISFLAGS = -I$(REDISLIB)
 
 #----------------------------------------

@@ -1,3 +1,7 @@
+/* Light wieght server that handles starting and stopping
+   ccn nodes on remote machines.
+*/
+
 package main
 
 import (

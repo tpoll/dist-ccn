@@ -1,3 +1,4 @@
+#Install and configure redis to run automatically
 sudo apt-get update
 sudo apt-get install -y build-essential
 sudo apt-get install -y tcl8.5

@@ -1,4 +1,5 @@
 #!/bin/dash
+#Createst x number of different content types
 number=1
 name="/ndn/test/mycontent"
 content="Hello, data world "
