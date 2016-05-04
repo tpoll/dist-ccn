@@ -33,7 +33,7 @@ with a command  such as :
 The load tester can be easily managed through its web interface.
 
 [nodeControl.py](https://github.com/tpoll/dist-ccn/blob/master/src/py/nodeControl.py) when run on the given set of machines
-runs a reliability test by killing and restarting the given machines. Note, the script only handles the starting and stopping of
+simulates a reliability scenario by killing and restarting the given machines. Note, the script only handles the starting and stopping of
 nodes.
 
 
